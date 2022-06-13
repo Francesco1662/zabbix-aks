@@ -48,15 +48,15 @@ spec:
                 secretKeyRef:
                   name: zabbix-app
                   key:  PGSQL_PASSWORD
-           
+                  
           ports:
             - name:  pgsql-server
               containerPort: 3306
-          imagePullSecrets:
-            - name: regpass
           volumeMounts:
             - name: pgsql-persistent-storage
               mountPath: /var/lib/pgsql
+      imagePullSecrets:
+        - name: regpass
       volumes:
         - name: pgsql-persistent-storage
           persistentVolumeClaim:
