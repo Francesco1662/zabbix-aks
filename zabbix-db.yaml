@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: apps/v1
 kind: StatefulSet
 
 metadata:
@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: pgsql-server
-    spec:
+    podSpec:
        Containers:
         - name: pgsql-server
           image: postgres:alpine3.16
@@ -24,15 +24,15 @@ spec:
             - "--default-authentication-plugin=pgsql_native_password"
             - --character-set-server=utf8
             - --collation-server=utf8_bin
-        imagePullPolicy: Never
-        name: pgsql-server
-        resources:
+            - "-c"
+            - "while true; do echo hello; sleep 10;done"
+          imagePullPolicy: Never
+          resources:
           requests:
             cpu: 100m
-        command: ["/bin/sh"]
-        args: ["-c", "while true; do echo hello; sleep 10;done"]
-      dnsPolicy: ClusterFirst
-      enableServiceLinks: true
+          command: ["/bin/sh"]
+          dnsPolicy: ClusterFirst
+          enableServiceLinks: true
           env:
             - name: PGSQL_ROOT_PASSWORD
               valueFrom:
@@ -62,9 +62,9 @@ spec:
           volumeMounts:
             - name: pgsql-persistent-storage
               mountPath: /var/lib/pgsql
-      imagePullSecrets:
+       imagePullSecrets:
         - name: regpass
-      volumes:
+       volumes:
         - name: pgsql-persistent-storage
           persistentVolumeClaim:
             claimName: pgsql-pv-claim
