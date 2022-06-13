@@ -17,7 +17,7 @@ spec:
       labels:
         app: pgsql-server
     spec:
-     restartPolicy: OnFailure
+      restartPolicy: OnFailure
       containers:
         - name: pgsql-server
           image: postgres:alpine
