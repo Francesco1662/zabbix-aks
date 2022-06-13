@@ -17,10 +17,10 @@ spec:
       labels:
         app: pgsql-server
     spec:
+     restartPolicy: OnFailure
       containers:
         - name: pgsql-server
           image: postgres:alpine
-          imagePullPolicy: Always
           args:
             - "--default-authentication-plugin=pgsql_native_password"
             - --character-set-server=utf8
@@ -54,9 +54,6 @@ spec:
               containerPort: 3306
           imagePullSecrets:
             - name: regpass
-          restartPolicy: Always
-          nodeSelector:
-              agent: linux
           volumeMounts:
             - name: pgsql-persistent-storage
               mountPath: /var/lib/pgsql
