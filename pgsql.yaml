@@ -1,0 +1,106 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: manual
+  namespace: monitoring
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  namespace: monitoring
+  name: pgsql-pv-volume
+  labels:
+    type: local
+    app: pgsql-server
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/pgsql
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  namespace: monitoring
+  name: pgsql-pv-claim
+  labels:
+    app: pgsql-server
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Gi
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres
+  spec:
+    containers:
+        - name: postgres
+          image: postgres:10.4
+          args:
+            - "--default-authentication-plugin=pgsql_native_password"
+            - --character-set-server=utf8
+            - --collation-server=utf8_bin
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: PGSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-app
+                  key: PGSQL_ROOT_PASSWORD
+            - name: PGSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: PGSQL_DATABASE
+                  name: zabbix-app   
+            - name: PGSQL_USER
+              valueFrom:
+                  secretKeyRef:
+                    name: zabbix-app
+                    key:  PGSQL_USER
+            - name: PGSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbix-app
+                  key:  PGSQL_PASSWORD
+    ports:
+      - containerPort: 5432  
+    volumeMounts:
+      - name: pgsql-persistent-storage
+        mountPath: /var/lib/pgsql                
+    volumes:
+      - name: pgsql-persistent-storage
+        persistentVolumeClaim:
+          claimName: pgsql-pv-claim
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  type: NodePort
+  ports:
+   - port: 5432
+  selector:
+   app: postgres   

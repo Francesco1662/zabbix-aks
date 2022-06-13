@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: monitoring
+spec:
+  replicas: 3 # Set 3 deployment replicas
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+  spec:
+    containers:
+      - name: postgres
+        image: postgres:10.4
+        args:
+          - "--default-authentication-plugin=pgsql_native_password"
+          - --character-set-server=utf8
+          - --collation-server=utf8_bin
+        imagePullPolicy: "IfNotPresent"
+        env:
+          - name: PGSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zabbix-app
+                key: PGSQL_ROOT_PASSWORD
+          - name: PGSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                key: PGSQL_DATABASE
+                name: zabbix-app   
+          - name: PGSQL_USER
+            valueFrom:
+                secretKeyRef:
+                  name: zabbix-app
+                  key:  PGSQL_USER
+          - name: PGSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zabbix-app
+                key:  PGSQL_PASSWORD
+        resources:
+          limits:
+            memory: "1024Mi"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: /var/lib/pgsql
+            name: postgresdata
+    ports:
+      - containerPort: 5432  
+    volumes:
+      - name: pgsql-persistent-storage
+        persistentVolumeClaim:
+          claimName: pgsql-pv-claim     
+        
+          

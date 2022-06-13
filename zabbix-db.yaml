@@ -16,8 +16,8 @@ spec:
     metadata:
       labels:
         app: pgsql-server
-    podSpec:
-       Containers:
+    spec:
+      containers:
         - name: pgsql-server
           image: postgres:alpine3.16
           args:
@@ -27,12 +27,6 @@ spec:
             - "-c"
             - "while true; do echo hello; sleep 10;done"
           imagePullPolicy: Never
-          resources:
-          requests:
-            cpu: 100m
-          command: ["/bin/sh"]
-          dnsPolicy: ClusterFirst
-          enableServiceLinks: true
           env:
             - name: PGSQL_ROOT_PASSWORD
               valueFrom:
@@ -62,9 +56,9 @@ spec:
           volumeMounts:
             - name: pgsql-persistent-storage
               mountPath: /var/lib/pgsql
-       imagePullSecrets:
+      imagePullSecrets:
         - name: regpass
-       volumes:
+      volumes:
         - name: pgsql-persistent-storage
           persistentVolumeClaim:
             claimName: pgsql-pv-claim
