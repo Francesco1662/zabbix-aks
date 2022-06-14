@@ -1,0 +1,76 @@
+apiVersion: 2021-10-01
+location: eastus
+name: Zabbix_CTL
+properties:
+  containers:
+  - name: postgres-server
+    properties:
+      image: postgres:alpine3.16
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+      ports:
+      - port: 5432
+  - name: zabbix-web
+    properties:
+      image: zabbix/zabbix-web-apache-pgsql:latest
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+      ports:
+      - port: 443
+      - port: 8443
+      environmentVariables:
+      - name: env_db_pgsql
+        value: '# DB_SERVER_HOST=postgres-server
+                # DB_SERVER_PORT=5432
+                # POSTGRES_USER=zabbix
+                POSTGRES_USER_FILE=/run/secrets/POSTGRES_USER
+                # POSTGRES_PASSWORD=zabbix
+                POSTGRES_PASSWORD_FILE=/run/secrets/POSTGRES_PASSWORD
+                # POSTGRES_DB=zabbix
+                POSTGRES_DB=zabbix
+                # DB_SERVER_SCHEMA=public
+                # ENABLE_TIMESCALEDB=true
+                # POSTGRES_USE_IMPLICIT_SEARCH_PATH=false'
+  - name: zabbix-server
+    properties:
+      image: zabbix/zabbix-server-pgsql:latest
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+      ports:
+      - port: 10051
+      environmentVariables:
+      - name: env_db_pgsql
+        value: '# DB_SERVER_HOST=postgres-server
+                # DB_SERVER_PORT=5432
+                # POSTGRES_USER=zabbix
+                POSTGRES_USER_FILE=/run/secrets/POSTGRES_USER
+                # POSTGRES_PASSWORD=zabbix
+                POSTGRES_PASSWORD_FILE=/run/secrets/POSTGRES_PASSWORD
+                # POSTGRES_DB=zabbix
+                POSTGRES_DB=zabbix
+                # DB_SERVER_SCHEMA=public
+                # ENABLE_TIMESCALEDB=true
+                # POSTGRES_USE_IMPLICIT_SEARCH_PATH=fals'
+  - name: grafana
+    properties:
+      image: grafana/grafana:latest
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1.5
+  osType: Linux
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 443
+    - protocol: tcp
+      port: 8443
+  restartPolicy: never
+tags: {zabbix: testing}

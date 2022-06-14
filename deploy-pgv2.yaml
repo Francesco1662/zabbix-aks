@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    name: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: postgres
+  template:
+    metadata:
+      labels:
+        service: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14-alpine
+          volumeMounts:
+            - name: pgsql-persistent-storage
+              mountPath: /var/lib/pgsql 
+          env:
+          - name: PGSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zabbix-app
+                key: PGSQL_ROOT_PASSWORD
+          - name: PGSQL_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                key: PGSQL_DATABASE
+                name: zabbix-app   
+          - name: PGSQL_USER
+            valueFrom:
+                secretKeyRef:
+                  name: zabbix-app
+                  key:  PGSQL_USER
+          - name: PGSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zabbix-app
+                key:  PGSQL_PASSWORD
+      restartPolicy: Always
+      volumes:
+        - name: pgsql-persistent-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc-claim

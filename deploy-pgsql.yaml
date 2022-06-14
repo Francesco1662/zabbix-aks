@@ -1,26 +1,37 @@
-apiVersion: apps/v1
+apiVersion: extensions/v1
 kind: Deployment
 metadata:
   name: postgres
   namespace: monitoring
 spec:
-  replicas: 3 # Set 3 deployment replicas
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: postgres
+      app: postges-test
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        app: postgres
-  spec:
-    containers:
+        app: postgres-test
+    spec:
+      containers:
       - name: postgres
-        image: postgres:10.4
+        image: ubuntu/postgres:latest
         args:
           - "--default-authentication-plugin=pgsql_native_password"
           - --character-set-server=utf8
           - --collation-server=utf8_bin
         imagePullPolicy: "IfNotPresent"
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        terminationGracePeriodSeconds: 30
         env:
           - name: PGSQL_ROOT_PASSWORD
             valueFrom:
@@ -47,13 +58,13 @@ spec:
             memory: "1024Mi"
             cpu: "500m"
         volumeMounts:
-          - mountPath: /var/lib/pgsql
-            name: postgresdata
-    ports:
-      - containerPort: 5432  
-    volumes:
-      - name: pgsql-persistent-storage
-        persistentVolumeClaim:
-          claimName: pgsql-pv-claim     
+          - name: pgsql-persistent-storage
+            mountPath: /var/lib/pgsql
+      ports:
+        - containerPort: 5432  
+      volumes:
+        - name: pgsql-persistent-storage
+          persistentVolumeClaim:
+            claimName: pgsql-pv-claim     
         
           
